@@ -2,16 +2,36 @@ module AssocList exposing
     ( Dict
     , empty, singleton, insert, update, remove
     , isEmpty, member, get, size
+    , eq
     , keys, values, toList, fromList
     , map, foldl, foldr, filter, partition
     , union, intersect, diff, merge
     )
 
-{-| A dictionary mapping unique keys to values. The keys can be any comparable
-type. This includes `Int`, `Float`, `Time`, `Char`, `String`, and tuples or
-lists of comparable types.
+{-| An [association list](https://en.wikipedia.org/wiki/Association_list) is a
+list of tuples that map unique keys to values. The keys can be of any type (so
+long as it has a reasonable definition for equality). This includes pretty
+much everything except for functions and things that contain functions.
 
-TODO update: Insert, remove, and query operations all take _O(log n)_ time.
+This library is intended to be used as a drop-in replacement for the `Dict`
+module in elm/core. You might import it like so,
+
+    import AssocList as Dict exposing (Dict)
+
+Since this library does not require your keys to be `comparable`, some
+operations are asymptotically slower than those in the `Dict` module in
+elm/core. If you are working with small-ish dictionaries, this is likely not
+a problem. Furthermore, the bottleneck point in most Elm programs is DOM
+manipulation, so slower data structure operations are unlikely to cause a
+noticable difference in how your app performs. For a detailed comparison of
+the performance characteristics of the two implementations,
+[Performance.md](TODO).
+
+All functions in this library are "stack safe," which means that your program
+won't crash from recursing over large association lists. You can read
+Evan Czaplicki's
+[document on tail-call elimination](https://github.com/evancz/functional-programming-in-elm/blob/master/recursion/tail-call-elimination.md)
+for more information about this topic.
 
 
 # Dictionaries
@@ -27,6 +47,11 @@ TODO update: Insert, remove, and query operations all take _O(log n)_ time.
 # Query
 
 @docs isEmpty, member, get, size
+
+
+# Equality
+
+@docs eq
 
 
 # Lists
@@ -50,7 +75,7 @@ TODO update: Insert, remove, and query operations all take _O(log n)_ time.
 that lets you look up a `String` (such as user names) and find the associated
 `User`.
 
-    import Dict exposing (Dict)
+    import AssocList as Dict exposing (Dict)
 
     users : Dict String User
     users =
@@ -90,13 +115,13 @@ dictionary.
 
 -}
 get : k -> Dict k v -> Maybe v
-get targetKey (D dict) =
-    lookup targetKey dict
+get targetKey (D alist) =
+    getUnboxed targetKey alist
 
 
-lookup : k -> List ( k, v ) -> Maybe v
-lookup targetKey dict =
-    case dict of
+getUnboxed : k -> List ( k, v ) -> Maybe v
+getUnboxed targetKey alist =
+    case alist of
         [] ->
             Nothing
 
@@ -105,14 +130,20 @@ lookup targetKey dict =
                 Just value
 
             else
-                lookup targetKey rest
+                getUnboxed targetKey rest
 
 
 {-| Determine if a key is in a dictionary.
 -}
 member : k -> Dict k v -> Bool
-member targetKey dict =
-    case get targetKey dict of
+member targetKey (D alist) =
+    -- TODO consider avoiding the extra function call
+    memberUnboxed targetKey alist
+
+
+memberUnboxed : k -> List ( k, v ) -> Bool
+memberUnboxed targetKey alist =
+    case getUnboxed targetKey alist of
         Just _ ->
             True
 
@@ -123,8 +154,8 @@ member targetKey dict =
 {-| Determine the number of key-value pairs in the dictionary.
 -}
 size : Dict k v -> Int
-size (D dict) =
-    List.length dict
+size (D alist) =
+    List.length alist
 
 
 {-| Determine if a dictionary is empty.
@@ -133,47 +164,77 @@ size (D dict) =
 
 -}
 isEmpty : Dict k v -> Bool
-isEmpty (D dict) =
-    dict == []
+isEmpty dict =
+    dict == D []
+
+
+{-| Compare two dictionaries for equality. Dictionaries are defined to be
+equal when they have identical key-value pairs where keys and values are
+compared using the built-in equality operator. The built-in equality operator
+will behave strangely with the `Dict` type in this library since association
+lists have no canonical form.
+
+    eq (fromList [ ( 'a', 1 ), ( 'b', 2 ) ]) (fromList [ ( 'b', 2 ), ( 'a', 1 ) ]) == True
+
+-}
+eq : Dict k v -> Dict k v -> Bool
+eq leftDict rightDict =
+    merge
+        (\_ _ _ -> False)
+        (\_ a b result -> result && a == b)
+        (\_ _ _ -> False)
+        leftDict
+        rightDict
+        True
 
 
 {-| Insert a key-value pair into a dictionary. Replaces value when there is
 a collision.
 -}
 insert : k -> v -> Dict k v -> Dict k v
-insert key value (D dict) =
-    D (( key, value ) :: deleteKey key dict)
+insert key value (D alist) =
+    D (insertUnboxed key value alist)
+
+
+
+-- D (( key, value ) :: removeUnboxed key dict)
+
+
+insertUnboxed : k -> v -> List ( k, v ) -> List ( k, v )
+insertUnboxed key value alist =
+    ( key, value ) :: removeUnboxed key alist
 
 
 {-| Remove a key-value pair from a dictionary. If the key is not found,
 no changes are made.
 -}
 remove : k -> Dict k v -> Dict k v
-remove targetKey (D dict) =
-    D (deleteKey targetKey dict)
+remove targetKey (D alist) =
+    D (removeUnboxed targetKey alist)
 
 
-deleteKey : k -> List ( k, v ) -> List ( k, v )
-deleteKey targetKey dict =
-    List.filter (\( key, _ ) -> key /= targetKey) dict
+removeUnboxed : k -> List ( k, v ) -> List ( k, v )
+removeUnboxed targetKey alist =
+    List.filter (\( key, _ ) -> key /= targetKey) alist
 
 
 {-| Update the value of a dictionary for a specific key with a given function.
 -}
 update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
-update targetKey alter dict =
-    case alter (get targetKey dict) of
+update targetKey alter (D alist) =
+    case alter (getUnboxed targetKey alist) of
         Just alteredValue ->
-            insert targetKey alteredValue dict
+            D (insertUnboxed targetKey alteredValue alist)
 
         Nothing ->
-            remove targetKey dict
+            D (removeUnboxed targetKey alist)
 
 
 
+-- TODO decide on implementation for update
 {-
    update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
-   update targetKey alter (D dict) =
+   update targetKey alter (D alist) =
        let
            ( targetValue, alteredDictionary ) =
                List.foldr
@@ -185,7 +246,7 @@ update targetKey alter dict =
                            ( capturedValue, entry :: accumulator )
                    )
                    ( Nothing, [] )
-                   dict
+                   alist
        in
        case alter targetValue of
            Just alteredValue ->
@@ -211,28 +272,30 @@ singleton key value =
 to the first dictionary.
 -}
 union : Dict k v -> Dict k v -> Dict k v
-union (D leftDict) rightDict =
-    List.foldr
-        (\( lKey, lValue ) result ->
-            insert lKey lValue result
+union (D leftAlist) (D rightAlist) =
+    D
+        (List.foldr
+            (\( lKey, lValue ) result ->
+                insertUnboxed lKey lValue result
+            )
+            rightAlist
+            leftAlist
         )
-        rightDict
-        leftDict
 
 
 {-| Keep a key-value pair when its key appears in the second dictionary.
 Preference is given to values in the first dictionary.
 -}
 intersect : Dict k v -> Dict k v -> Dict k v
-intersect (D leftDict) rightDict =
-    D (List.filter (\( key, _ ) -> member key rightDict) leftDict)
+intersect (D leftAlist) (D rightAlist) =
+    D (List.filter (\( key, _ ) -> memberUnboxed key rightAlist) leftAlist)
 
 
 {-| Keep a key-value pair when its key does not appear in the second dictionary.
 -}
 diff : Dict k a -> Dict k b -> Dict k a
-diff (D leftDict) rightDict =
-    D (List.filter (\( k, _ ) -> not (member k rightDict)) leftDict)
+diff (D leftAlist) (D rightAlist) =
+    D (List.filter (\( k, _ ) -> not (memberUnboxed k rightAlist)) leftAlist)
 
 
 {-| The most general way of combining two dictionaries. You provide three
@@ -254,10 +317,14 @@ merge :
     -> Dict k b
     -> result
     -> result
-merge leftStep bothStep rightStep ((D leftDict) as wrappedLD) (D rightDict) initialResult =
+merge leftStep bothStep rightStep (D leftAlist) (D rightAlist) initialResult =
     let
         ( inBoth, inRightOnly ) =
-            List.partition (\( key, _ ) -> member key wrappedLD) rightDict
+            List.partition
+                (\( key, _ ) ->
+                    memberUnboxed key leftAlist
+                )
+                rightAlist
 
         intermediateResult =
             List.foldr
@@ -269,7 +336,7 @@ merge leftStep bothStep rightStep ((D leftDict) as wrappedLD) (D rightDict) init
     in
     List.foldr
         (\( lKey, lValue ) result ->
-            case lookup lKey inBoth of
+            case getUnboxed lKey inBoth of
                 Just rValue ->
                     bothStep lKey lValue rValue result
 
@@ -277,7 +344,7 @@ merge leftStep bothStep rightStep ((D leftDict) as wrappedLD) (D rightDict) init
                     leftStep lKey lValue result
         )
         intermediateResult
-        leftDict
+        leftAlist
 
 
 
@@ -287,8 +354,8 @@ merge leftStep bothStep rightStep ((D leftDict) as wrappedLD) (D rightDict) init
 {-| Apply a function to all values in a dictionary.
 -}
 map : (k -> a -> b) -> Dict k a -> Dict k b
-map alter (D dict) =
-    D (List.map (\( k, v ) -> ( k, alter k v )) dict)
+map alter (D alist) =
+    D (List.map (\( key, value ) -> ( key, alter key value )) alist)
 
 
 {-| Fold over the key-value pairs in a dictionary from lowest key to highest key.
@@ -308,13 +375,13 @@ map alter (D dict) =
 
 -}
 foldl : (k -> v -> b -> b) -> b -> Dict k v -> b
-foldl func initialResult (D dict) =
+foldl func initialResult (D alist) =
     List.foldl
         (\( key, value ) result ->
             func key value result
         )
         initialResult
-        dict
+        alist
 
 
 {-| Fold over the key-value pairs in a dictionary from highest key to lowest key.
@@ -334,20 +401,20 @@ foldl func initialResult (D dict) =
 
 -}
 foldr : (k -> v -> b -> b) -> b -> Dict k v -> b
-foldr func initialResult (D dict) =
+foldr func initialResult (D alist) =
     List.foldr
         (\( key, value ) result ->
             func key value result
         )
         initialResult
-        dict
+        alist
 
 
 {-| Keep only the key-value pairs that pass the given test.
 -}
 filter : (k -> v -> Bool) -> Dict k v -> Dict k v
-filter isGood (D dict) =
-    D (List.filter (\( k, v ) -> isGood k v) dict)
+filter isGood (D alist) =
+    D (List.filter (\( key, value ) -> isGood key value) alist)
 
 
 {-| Partition a dictionary according to some test. The first dictionary
@@ -355,10 +422,10 @@ contains all key-value pairs which passed the test, and the second contains
 the pairs that did not.
 -}
 partition : (k -> v -> Bool) -> Dict k v -> ( Dict k v, Dict k v )
-partition isGood (D dict) =
+partition isGood (D alist) =
     let
         ( good, bad ) =
-            List.partition (\( k, v ) -> isGood k v) dict
+            List.partition (\( key, value ) -> isGood key value) alist
     in
     ( D good, D bad )
 
@@ -373,8 +440,8 @@ partition isGood (D dict) =
 
 -}
 keys : Dict k v -> List k
-keys (D dict) =
-    List.map Tuple.first dict
+keys (D alist) =
+    List.map Tuple.first alist
 
 
 {-| Get all of the values in a dictionary, in the order of their keys.
@@ -383,19 +450,26 @@ keys (D dict) =
 
 -}
 values : Dict k v -> List v
-values (D dict) =
-    List.map Tuple.second dict
+values (D alist) =
+    List.map Tuple.second alist
 
 
 {-| Convert a dictionary into an association list of key-value pairs, sorted by keys.
 -}
 toList : Dict k v -> List ( k, v )
-toList (D dict) =
-    dict
+toList (D alist) =
+    alist
 
 
 {-| Convert an association list into a dictionary.
 -}
 fromList : List ( k, v ) -> Dict k v
 fromList assocs =
-    List.foldl (\( key, value ) dict -> insert key value dict) empty assocs
+    D
+        (List.foldl
+            (\( key, value ) alist ->
+                insertUnboxed key value alist
+            )
+            []
+            assocs
+        )
