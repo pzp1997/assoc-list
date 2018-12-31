@@ -167,7 +167,7 @@ update targetKey alter dict =
             insert targetKey alteredValue dict
 
         Nothing ->
-            dict
+            remove targetKey dict
 
 
 
@@ -212,7 +212,7 @@ to the first dictionary.
 -}
 union : Dict k v -> Dict k v -> Dict k v
 union (D leftDict) rightDict =
-    List.foldl
+    List.foldr
         (\( lKey, lValue ) result ->
             insert lKey lValue result
         )
@@ -260,14 +260,14 @@ merge leftStep bothStep rightStep ((D leftDict) as wrappedLD) (D rightDict) init
             List.partition (\( key, _ ) -> member key wrappedLD) rightDict
 
         intermediateResult =
-            List.foldl
+            List.foldr
                 (\( rKey, rValue ) result ->
                     rightStep rKey rValue result
                 )
                 initialResult
                 inRightOnly
     in
-    List.foldl
+    List.foldr
         (\( lKey, lValue ) result ->
             case lookup lKey inBoth of
                 Just rValue ->
