@@ -151,11 +151,12 @@ isEmpty dict =
     dict == D []
 
 
-{-| Compare two dictionaries for equality. Dictionaries are defined to be
-equal when they have identical key-value pairs where keys and values are
-compared using the built-in equality operator. The built-in equality operator
-will behave strangely with the `Dict` type in this library since association
-lists have no canonical form.
+{-| Compare two dictionaries for equality, ignoring insertion order.
+Dictionaries are defined to be equal when they have identical key-value pairs
+where keys and values are compared using the built-in equality operator.
+
+You should almost never use the built-in equality operator to compare
+dictionaries from this module since association lists have no canonical form.
 
     eq
         (fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
@@ -195,6 +196,12 @@ remove targetKey (D alist) =
 
 
 {-| Update the value of a dictionary for a specific key with a given function.
+
+If you are using this module as an ordered dictionary, please note that if you
+are replacing the value of an existing entry, the entry will remain where it
+is in the insertion order. (If you do want to change the insertion order,
+consider using `get` in conjunction with `insert` instead.)
+
 -}
 update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
 update targetKey alter ((D alist) as dict) =
@@ -226,62 +233,6 @@ update targetKey alter ((D alist) as dict) =
                     dict
 
 
-
---
--- case alter (get targetKey dict) of
---     Just alteredValue ->
---         insert targetKey alteredValue dict
---
---     Nothing ->
---         remove targetKey dict
--- update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
--- update targetKey alter (D alist) =
---    let
---        alteredAlist =
---            List.foldr
---                (\(( key, value ) as entry) result ) ->
---                    if key == targetKey then
---                        ( Just value, accumulator )
---
---                    else
---                        ( capturedValue, entry :: result )
---                )
---                []
---                alist
---    in
---    case alter targetValue of
---        Just alteredValue ->
---            D (( targetKey, alteredValue ) :: alteredDictionary)
---
---        Nothing ->
---            D alteredDictionary
---
--- TODO decide on implementation for update
-{-
-   update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
-   update targetKey alter (D alist) =
-       let
-           ( targetValue, alteredDictionary ) =
-               List.foldr
-                   (\(( key, value ) as entry) ( capturedValue, accumulator ) ->
-                       if key == targetKey then
-                           ( Just value, accumulator )
-
-                       else
-                           ( capturedValue, entry :: accumulator )
-                   )
-                   ( Nothing, [] )
-                   alist
-       in
-       case alter targetValue of
-           Just alteredValue ->
-               D (( targetKey, alteredValue ) :: alteredDictionary)
-
-           Nothing ->
-               D alteredDictionary
--}
-
-
 {-| Create a dictionary with one key-value pair.
 -}
 singleton : k -> v -> Dict k v
@@ -295,6 +246,12 @@ singleton key value =
 
 {-| Combine two dictionaries. If there is a collision, preference is given
 to the first dictionary.
+
+If you are using this module as an ordered dictionary, the ordering of the
+output dictionary will be all the entries of the first dictionary (from most
+recently inserted to least recently inserted) followed by all the entries of
+the second dictionary (from most recently inserted to least recently inserted).
+
 -}
 union : Dict k v -> Dict k v -> Dict k v
 union (D leftAlist) rightDict =
@@ -328,8 +285,14 @@ accumulators for when a given key appears:
 2.  In both dictionaries.
 3.  Only in the right dictionary.
 
-You then traverse all the keys from lowest to highest, building up whatever
-you want.
+You then traverse all the keys in the following order, building up whatever
+you want:
+
+1.  All the keys that appear only in the right dictionary from least
+    recently inserted to most recently inserted.
+2.  All the keys in the left dictionary from least recently inserted to most
+    recently inserted (without regard to whether they appear only in the left
+    dictionary or in both dictionaries).
 
 -}
 merge :
@@ -387,21 +350,18 @@ map alter (D alist) =
     D (List.map (\( key, value ) -> ( key, alter key value )) alist)
 
 
+{-| Fold over the key-value pairs in a dictionary from most recently inserted
+to least recently inserted.
 
--- TODO
+    users : Dict String Int
+    users =
+        fromList
+            [ ( "Alice", 28 )
+            , ( "Bob", 19 )
+            , ( "Chuck", 33 )
+            ]
 
-
-{-| Fold over the key-value pairs in a dictionary from lowest key to highest key.
-
-    getAges : Dict String User -> List String
-    getAges users =
-        foldl addAge [] users
-
-    addAge : String -> User -> List String -> List String
-    addAge _ user ages =
-        user.age :: ages
-
-    getAges users == [33,19,28]
+    foldl (\name age result -> age :: result) [] users --> [28,19,33]
 
 -}
 foldl : (k -> v -> b -> b) -> b -> Dict k v -> b
@@ -414,22 +374,18 @@ foldl func initialResult (D alist) =
         alist
 
 
+{-| Fold over the key-value pairs in a dictionary from least recently inserted
+to most recently insered.
 
--- TODO
+    ages : Dict String Int
+    ages =
+        fromList
+            [ ( "Alice", 28 )
+            , ( "Bob", 19 )
+            , ( "Chuck", 33 )
+            ]
 
-
-{-| Fold over the key-value pairs in a dictionary from highest key to lowest key.
-
-    getAges : Dict String User -> List String
-    getAges users =
-        foldr addAge [] users
-
-    addAge : String -> User -> List String -> List String
-    addAge _ user ages =
-        user.age :: ages
-
-
-    getAges users == [28,19,33]
+    foldr (\name age result -> age :: result) [] users --> [33,19,28]
 
 -}
 foldr : (k -> v -> b -> b) -> b -> Dict k v -> b
