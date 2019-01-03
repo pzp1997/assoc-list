@@ -10,11 +10,6 @@ animals =
     Dict.fromList [ ( "Tom", "cat" ), ( "Jerry", "mouse" ) ]
 
 
-expectDictEq : Dict.Dict k v -> Dict.Dict k v -> Expect.Expectation
-expectDictEq leftDict rightDict =
-    Expect.equal True (Dict.eq leftDict rightDict)
-
-
 tests : Test
 tests =
     let
@@ -22,40 +17,48 @@ tests =
             describe "build Tests"
                 [ test "empty" <|
                     \() ->
-                        expectDictEq (Dict.fromList []) Dict.empty
+                        Expect.equal (Dict.fromList []) Dict.empty
                 , test "singleton" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.fromList [ ( "k", "v" ) ])
                             (Dict.singleton "k" "v")
                 , test "insert" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.fromList [ ( "k", "v" ) ])
                             (Dict.insert "k" "v" Dict.empty)
                 , test "insert replace" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.fromList [ ( "k", "vv" ) ])
                             (Dict.insert "k" "vv" (Dict.singleton "k" "v"))
                 , test "update" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.fromList [ ( "k", "vv" ) ])
                             (Dict.update "k" (\v -> Just "vv") (Dict.singleton "k" "v"))
                 , test "update Nothing" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             Dict.empty
                             (Dict.update "k" (\v -> Nothing) (Dict.singleton "k" "v"))
+                , test "update does not change order" <|
+                    \() ->
+                        Expect.equal
+                            (Dict.insert "b" 2 (Dict.singleton "a" 0))
+                            (Dict.update "a"
+                                (\v -> Just 0)
+                                (Dict.insert "b" 2 (Dict.singleton "a" 1))
+                            )
                 , test "remove" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             Dict.empty
                             (Dict.remove "k" (Dict.singleton "k" "v"))
                 , test "remove not found" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "k" "v")
                             (Dict.remove "kk" (Dict.singleton "k" "v"))
                 ]
@@ -82,17 +85,22 @@ tests =
             describe "equality Tests"
                 [ test "eq empty" <|
                     \() ->
-                        expectDictEq (Dict.fromList []) Dict.empty
+                        Expect.equal True
+                            (Dict.eq (Dict.fromList []) Dict.empty)
                 , test "eq in order" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
-                            (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
+                        Expect.equal True
+                            (Dict.eq
+                                (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
+                                (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
+                            )
                 , test "eq out of order" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
-                            (Dict.fromList [ ( 'b', 2 ), ( 'a', 1 ) ])
+                        Expect.equal True
+                            (Dict.eq
+                                (Dict.fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
+                                (Dict.fromList [ ( 'b', 2 ), ( 'a', 1 ) ])
+                            )
                 , test "eq left bigger" <|
                     \() ->
                         Expect.equal False
@@ -120,7 +128,7 @@ tests =
             describe "combine Tests"
                 [ test "union" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             animals
                             (Dict.union
                                 (Dict.singleton "Jerry" "mouse")
@@ -128,7 +136,7 @@ tests =
                             )
                 , test "union collison" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Tom" "cat")
                             (Dict.union
                                 (Dict.singleton "Tom" "cat")
@@ -136,7 +144,7 @@ tests =
                             )
                 , test "intersect" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Tom" "cat")
                             (Dict.intersect
                                 animals
@@ -144,7 +152,7 @@ tests =
                             )
                 , test "diff" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Jerry" "mouse")
                             (Dict.diff animals (Dict.singleton "Tom" "cat"))
                 ]
@@ -153,17 +161,17 @@ tests =
             describe "transform Tests"
                 [ test "filter" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Tom" "cat")
                             (Dict.filter (\k v -> k == "Tom") animals)
                 , test "partition fst" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Tom" "cat")
                             (Tuple.first (Dict.partition (\k v -> k == "Tom") animals))
                 , test "partition snd" <|
                     \() ->
-                        expectDictEq
+                        Expect.equal
                             (Dict.singleton "Jerry" "mouse")
                             (Tuple.second (Dict.partition (\k v -> k == "Tom") animals))
                 ]
@@ -183,10 +191,14 @@ tests =
                     Dict.empty |> Dict.insert "u2" [ 3 ]
 
                 b1 =
-                    List.map (\i -> ( i, [ i ] )) (List.range 1 10) |> Dict.fromList
+                    List.map (\i -> ( i, [ i ] )) (List.range 1 10)
+                        |> List.reverse
+                        |> Dict.fromList
 
                 b2 =
-                    List.map (\i -> ( i, [ i ] )) (List.range 5 15) |> Dict.fromList
+                    List.map (\i -> ( i, [ i ] )) (List.range 5 15)
+                        |> List.reverse
+                        |> Dict.fromList
 
                 bExpected =
                     [ ( 1, [ 1 ] ), ( 2, [ 2 ] ), ( 3, [ 3 ] ), ( 4, [ 4 ] ), ( 5, [ 5, 5 ] ), ( 6, [ 6, 6 ] ), ( 7, [ 7, 7 ] ), ( 8, [ 8, 8 ] ), ( 9, [ 9, 9 ] ), ( 10, [ 10, 10 ] ), ( 11, [ 11 ] ), ( 12, [ 12 ] ), ( 13, [ 13 ] ), ( 14, [ 14 ] ), ( 15, [ 15 ] ) ]
@@ -194,29 +206,63 @@ tests =
             describe "merge Tests"
                 [ test "merge empties" <|
                     \() ->
-                        expectDictEq
-                            Dict.empty
-                            (Dict.merge Dict.insert insertBoth Dict.insert Dict.empty Dict.empty Dict.empty)
+                        Expect.equal Dict.empty
+                            (Dict.merge
+                                Dict.insert
+                                insertBoth
+                                Dict.insert
+                                Dict.empty
+                                Dict.empty
+                                Dict.empty
+                            )
                 , test "merge singletons in order" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList [ ( "u1", [ 1 ] ), ( "u2", [ 2 ] ) ])
-                            (Dict.merge Dict.insert insertBoth Dict.insert s1 s2 Dict.empty)
+                        Expect.equal [ ( "u1", [ 1 ] ), ( "u2", [ 2 ] ) ]
+                            (Dict.merge
+                                Dict.insert
+                                insertBoth
+                                Dict.insert
+                                s1
+                                s2
+                                Dict.empty
+                                |> Dict.toList
+                            )
                 , test "merge singletons out of order" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList [ ( "u1", [ 1 ] ), ( "u2", [ 2 ] ) ])
-                            (Dict.merge Dict.insert insertBoth Dict.insert s2 s1 Dict.empty)
+                        Expect.equal [ ( "u2", [ 2 ] ), ( "u1", [ 1 ] ) ]
+                            (Dict.merge
+                                Dict.insert
+                                insertBoth
+                                Dict.insert
+                                s2
+                                s1
+                                Dict.empty
+                                |> Dict.toList
+                            )
                 , test "merge with duplicate key" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList [ ( "u2", [ 2, 3 ] ) ])
-                            (Dict.merge Dict.insert insertBoth Dict.insert s2 s23 Dict.empty)
+                        Expect.equal [ ( "u2", [ 2, 3 ] ) ]
+                            (Dict.merge
+                                Dict.insert
+                                insertBoth
+                                Dict.insert
+                                s2
+                                s23
+                                Dict.empty
+                                |> Dict.toList
+                            )
                 , test "partially overlapping" <|
                     \() ->
-                        expectDictEq
-                            (Dict.fromList bExpected)
-                            (Dict.merge Dict.insert insertBoth Dict.insert b1 b2 Dict.empty)
+                        Expect.equal bExpected
+                            (Dict.merge
+                                Dict.insert
+                                insertBoth
+                                Dict.insert
+                                b1
+                                b2
+                                Dict.empty
+                                |> Dict.toList
+                            )
                 ]
     in
     describe "Dict Tests"
