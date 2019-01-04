@@ -118,7 +118,6 @@ get targetKey (D alist) =
                 Just value
 
             else
-                -- TODO double check that the D gets erased with --optimize
                 get targetKey (D rest)
 
 
@@ -205,13 +204,17 @@ consider using `get` in conjunction with `insert` instead.)
 -}
 update : k -> (Maybe v -> Maybe v) -> Dict k v -> Dict k v
 update targetKey alter ((D alist) as dict) =
-    case get targetKey dict of
-        Just originalValue ->
-            case alter (Just originalValue) of
+    let
+        maybeValue =
+            get targetKey dict
+    in
+    case maybeValue of
+        Just _ ->
+            case alter maybeValue of
                 Just alteredValue ->
                     D
                         (List.map
-                            (\(( key, value ) as entry) ->
+                            (\(( key, _ ) as entry) ->
                                 if key == targetKey then
                                     ( targetKey, alteredValue )
 
@@ -275,7 +278,7 @@ intersect (D leftAlist) rightDict =
 -}
 diff : Dict k a -> Dict k b -> Dict k a
 diff (D leftAlist) rightDict =
-    D (List.filter (\( k, _ ) -> not (member k rightDict)) leftAlist)
+    D (List.filter (\( key, _ ) -> not (member key rightDict)) leftAlist)
 
 
 {-| The most general way of combining two dictionaries. You provide three
@@ -303,9 +306,9 @@ merge :
     -> Dict k b
     -> result
     -> result
-merge leftStep bothStep rightStep leftDict (D rightAlist) initialResult =
+merge leftStep bothStep rightStep ((D leftAlist) as leftDict) (D rightAlist) initialResult =
     let
-        ( inBothUnboxed, inRightOnly ) =
+        ( inBothAlist, inRightOnlyAlist ) =
             List.partition
                 (\( key, _ ) ->
                     member key leftDict
@@ -318,17 +321,11 @@ merge leftStep bothStep rightStep leftDict (D rightAlist) initialResult =
                     rightStep rKey rValue result
                 )
                 initialResult
-                inRightOnly
-
-        inBoth =
-            D inBothUnboxed
-
-        (D leftAlist) =
-            leftDict
+                inRightOnlyAlist
     in
     List.foldr
         (\( lKey, lValue ) result ->
-            case get lKey inBoth of
+            case get lKey (D inBothAlist) of
                 Just rValue ->
                     bothStep lKey lValue rValue result
 
@@ -413,7 +410,7 @@ partition : (k -> v -> Bool) -> Dict k v -> ( Dict k v, Dict k v )
 partition isGood (D alist) =
     let
         ( good, bad ) =
-            List.partition (\( key, value ) -> isGood key value) alist
+            List.partition (\( key, value ) -> isGood key value)
     in
     ( D good, D bad )
 
