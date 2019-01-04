@@ -53,15 +53,16 @@ main =
         { init = \() -> ( testEquality, Cmd.none )
         , update =
             \_ _ ->
-                ( Dict.values
-                    (Dict.merge
-                        Dict.insert
-                        (\k v _ result -> insert k v result)
-                        Dict.insert
-                        Dict.empty
-                        testDict
-                        testDict
-                    )
+                ( List.map String.fromInt <|
+                    Dict.values
+                        (Dict.merge
+                            Dict.insert
+                            (\k v _ result -> Dict.insert k v result)
+                            Dict.insert
+                            Dict.empty
+                            testDict
+                            testDict
+                        )
                 , Cmd.none
                 )
         , subscriptions = \_ -> Sub.none
