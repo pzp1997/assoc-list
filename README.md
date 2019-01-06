@@ -36,26 +36,30 @@ characterToMovie =
 Dict.get Simba characterToMovie --> Just LionKing
 ```
 
-(Note the use of a custom type as the dictionary key, which is not possible with the `Dict` module in elm/core.)
+(Note the use of a custom type as the dictionary key, which is not possible with the `Dict` module in elm/core!)
 
 ## Performance
 
 Since this library does not require your keys to be `comparable`, some
 operations are asymptotically slower than those in the `Dict` module in
-elm/core. If you are working with small-ish dictionaries, this is likely not
+elm/core. The good news is that if you are working with small-ish dictionaries, this is likely not
 a problem. Furthermore, the bottleneck point in most Elm programs is DOM
 manipulation, so slower data structure operations are unlikely to cause a
-noticable difference in how your app performs. For a detailed comparison of
+noticeable difference in how your app performs. For a detailed comparison of
 the performance characteristics of the two implementations, see
 [Performance.md](Performance.md).
 
-## Comparison to existing solutions
+## Comparison to existing work
 
 #### Dictionary with non-comparable keys
 
-The majority of the existing libraries that attempt to solve the dictionary with non-comparable keys problem suffer from at least one of the following problems:
+All the existing libraries that I have found that attempt to solve the dictionary with non-comparable keys problem suffer from at least one of the following issues:
 
-1.  stores function for converting keys to `comparable` within the data structure itself
+1.  stores a function for converting keys to `comparable` within the data structure itself
+    -   can cause runtime errors should you ever use the `==` operator to compare the structures
+    -   makes serialization trickier (for this reason, conventional wisdom states that you should "never put functions in your `Model` or `Msg` types")
+    -   see this [Discourse post](https://discourse.elm-lang.org/t/consequences-of-functions-in-the-model-with-0-19) and this [Elm Discuss thread](https://groups.google.com/forum/#!topic/elm-discuss/bOAHwSnklLc) for more information
+
 2.  does not provide full type-level safety against operating on two dictionaries with different comparators, e.g. `union (singleton identity 0 'a') (singleton (\x -> x + 1) 1 'b')`
 
 Here is a detailed analysis of all the relevant libraries I could find:
@@ -63,6 +67,10 @@ Here is a detailed analysis of all the relevant libraries I could find:
 turboMaCk/any-dict
 
 -   suffers from problems (1) and (2)
+
+rtfeldman/elm-sorter-experiment
+
+-   suffers from problem (1)
 
 jjant/elm-dict
 
@@ -72,12 +80,11 @@ jjant/elm-dict
 eeue56/elm-all-dict
 
 -   suffers from problems (1) and (2)
--   some non-essential parts of the library rely on Kernel code, making it non-trivial to update to 0.19
+-   some parts of the library rely on Kernel code, making it non-trivial to update to 0.19
 
 robertjlooby/elm-generic-dict
 
 -   suffers from problem (1)
--   suffers from problem (2), although the documentation does specify how the library will behave in these cases
 -   has not been updated to 0.19 as of time of writing
 
 #### Ordered dictionary

@@ -1,8 +1,7 @@
 module AssocList exposing
     ( Dict
     , empty, singleton, insert, update, remove
-    , isEmpty, member, get, size
-    , eq
+    , isEmpty, member, get, size, eq
     , keys, values, toList, fromList
     , map, foldl, foldr, filter, partition
     , union, intersect, diff, merge
@@ -32,12 +31,7 @@ for more information about this topic.
 
 # Query
 
-@docs isEmpty, member, get, size
-
-
-# Equality
-
-@docs eq
+@docs isEmpty, member, get, size, eq
 
 
 # Lists
@@ -55,8 +49,6 @@ for more information about this topic.
 @docs union, intersect, diff, merge
 
 -}
-
--- TODO import Dict as DeadDict (?) https://github.com/eeue56/elm-all-dict/blob/2.0.1/src/AllDict.elm#L76-L83
 
 
 {-| A dictionary of keys and values. So a `Dict String User` is a dictionary
@@ -134,6 +126,11 @@ member targetKey dict =
 
 
 {-| Determine the number of key-value pairs in the dictionary.
+
+    size (fromList [ ( "a", 1 ), ( "b", 2 ), ( "c", 3 ) ]) --> 3
+
+    size (insert 1 "b" (singleton 1 "a")) --> 1
+
 -}
 size : Dict k v -> Int
 size (D alist) =
@@ -158,8 +155,8 @@ You should almost never use the built-in equality operator to compare
 dictionaries from this module since association lists have no canonical form.
 
     eq
-        (fromList [ ( 'a', 1 ), ( 'b', 2 ) ])
-        (fromList [ ( 'b', 2 ), ( 'a', 1 ) ])
+        (fromList [ ( "a", 1 ), ( "b", 2 ) ])
+        (fromList [ ( "b", 2 ), ( "a", 1 ) ])
     --> True
 
 -}
@@ -374,8 +371,8 @@ foldl func initialResult (D alist) =
 {-| Fold over the key-value pairs in a dictionary from least recently inserted
 to most recently insered.
 
-    ages : Dict String Int
-    ages =
+    users : Dict String Int
+    users =
         fromList
             [ ( "Alice", 28 )
             , ( "Bob", 19 )
@@ -410,7 +407,7 @@ partition : (k -> v -> Bool) -> Dict k v -> ( Dict k v, Dict k v )
 partition isGood (D alist) =
     let
         ( good, bad ) =
-            List.partition (\( key, value ) -> isGood key value)
+            List.partition (\( key, value ) -> isGood key value) alist
     in
     ( D good, D bad )
 
