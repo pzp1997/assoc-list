@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "pzp1997/assoc-list",
-    "summary": "",
+    "summary": "Dictionary with custom keys implemented using association lists",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [
