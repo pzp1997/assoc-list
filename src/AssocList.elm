@@ -94,9 +94,14 @@ dictionary.
     animals : Dict String Animal
     animals = fromList [ ("Tom", Cat), ("Jerry", Mouse) ]
 
-    get "Tom"   animals --> Just Cat
-    get "Jerry" animals --> Just Mouse
-    get "Spike" animals --> Nothing
+    get "Tom" animals
+    --> Just Cat
+
+    get "Jerry" animals
+    --> Just Mouse
+
+    get "Spike" animals
+    --> Nothing
 
 -}
 get : k -> Dict k v -> Maybe v
@@ -127,9 +132,11 @@ member targetKey dict =
 
 {-| Determine the number of key-value pairs in the dictionary.
 
-    size (fromList [ ( "a", 1 ), ( "b", 2 ), ( "c", 3 ) ]) --> 3
+    size (fromList [ ( "a", 1 ), ( "b", 2 ), ( "c", 3 ) ])
+    --> 3
 
-    size (insert 1 "b" (singleton 1 "a")) --> 1
+    size (insert 1 "b" (singleton 1 "a"))
+    --> 1
 
 -}
 size : Dict k v -> Int
@@ -139,7 +146,8 @@ size (D alist) =
 
 {-| Determine if a dictionary is empty.
 
-    isEmpty empty --> True
+    isEmpty empty
+    --> True
 
 -}
 isEmpty : Dict k v -> Bool
@@ -349,13 +357,13 @@ to least recently inserted.
 
     users : Dict String Int
     users =
-        fromList
-            [ ( "Alice", 28 )
-            , ( "Bob", 19 )
-            , ( "Chuck", 33 )
-            ]
+        empty
+            |> insert "Alice" 28
+            |> insert "Bob" 19
+            |> insert "Chuck" 33
 
-    foldl (\name age result -> age :: result) [] users --> [28,19,33]
+    foldl (\name age result -> age :: result) [] users
+    --> [28,19,33]
 
 -}
 foldl : (k -> v -> b -> b) -> b -> Dict k v -> b
@@ -373,13 +381,13 @@ to most recently insered.
 
     users : Dict String Int
     users =
-        fromList
-            [ ( "Alice", 28 )
-            , ( "Bob", 19 )
-            , ( "Chuck", 33 )
-            ]
+        empty
+            |> insert "Alice" 28
+            |> insert "Bob" 19
+            |> insert "Chuck" 33
 
-    foldr (\name age result -> age :: result) [] users --> [33,19,28]
+    foldr (\name age result -> age :: result) [] users
+    --> [33,19,28]
 
 -}
 foldr : (k -> v -> b -> b) -> b -> Dict k v -> b
@@ -419,7 +427,8 @@ partition isGood (D alist) =
 {-| Get all of the keys in a dictionary, in the order that they were inserted
 with the most recently inserted key at the head of the list.
 
-    keys (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ]) --> [ 1, 0 ]
+    keys (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ])
+    --> [ 1, 0 ]
 
 -}
 keys : Dict k v -> List k
@@ -430,7 +439,8 @@ keys (D alist) =
 {-| Get all of the values in a dictionary, in the order that they were inserted
 with the most recently inserted value at the head of the list.
 
-    values (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ]) --> [ "Bob", "Alice" ]
+    values (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ])
+    --> [ "Bob", "Alice" ]
 
 -}
 values : Dict k v -> List v
