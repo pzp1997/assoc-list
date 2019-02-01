@@ -1,4 +1,4 @@
 {
   "root": "../src",
-  "tests": ["AssocList", "./README.md"]
+  "tests": ["AssocSet", "./README.md"]
 }
