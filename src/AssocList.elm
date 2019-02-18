@@ -180,7 +180,7 @@ eq leftDict rightDict =
 
 
 {-| Insert a key-value pair into a dictionary. Replaces value when there is
-a collision.
+a collision. New element is added to the end of the list.
 -}
 insert : k -> v -> Dict k v -> Dict k v
 insert key value dict =
@@ -188,7 +188,7 @@ insert key value dict =
         (D alteredAlist) =
             remove key dict
     in
-    D (( key, value ) :: alteredAlist)
+    D (List.concat [ alteredAlist, [ ( key, value ) ] ])
 
 
 {-| Remove a key-value pair from a dictionary. If the key is not found,
