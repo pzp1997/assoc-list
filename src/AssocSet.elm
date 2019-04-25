@@ -7,7 +7,7 @@ module AssocSet exposing
     , map, foldl, foldr, filter, partition
     )
 
-{-| Implimentation of elm/core Set based on pzp1997/assoc-list
+{-| Implementation of elm/core Set based on pzp1997/assoc-list
 
 A set of unique values. The values can be any type that can be compared using (==).
 Insert, remove, and query operation performance subject to
