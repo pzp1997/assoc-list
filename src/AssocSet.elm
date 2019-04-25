@@ -162,14 +162,19 @@ map func set =
 
 
 {-| Only keep elements that pass the given test.
-import Set exposing (Set)
-numbers : Set Int
-numbers =
-Set.fromList [-2,-1,0,1,2]
-positives : Set Int
-positives =
-Set.filter (\\x -> x > 0) numbers
--- positives == Set.fromList [1,2]
+
+    import Set exposing (Set)
+
+    numbers : Set Int
+    numbers =
+        Set.fromList [ -2, -1, 0, 1, 2 ]
+
+    positives : Set Int
+    positives =
+        Set.filter (\x -> x > 0) numbers
+
+    -- positives == Set.fromList [ 1, 2 ]
+
 -}
 filter : (a -> Bool) -> Set a -> Set a
 filter isGood (Set dict) =
