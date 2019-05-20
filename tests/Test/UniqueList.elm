@@ -182,6 +182,11 @@ mapTests =
         \() ->
             Expect.equal (Set.fromList (List.reverse (List.range -100 -1)))
                 (Set.map negate set1To100)
+    , test "maps to duplicate keys" <|
+        \() ->
+            Expect.equal
+                (Set.singleton 1)
+                (Set.map (\_ -> 1) set1To50)
     ]
 
 

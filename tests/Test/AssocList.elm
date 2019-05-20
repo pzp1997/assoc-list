@@ -7,7 +7,7 @@ import Test exposing (..)
 
 animals : Dict.Dict String String
 animals =
-    Dict.fromList [ ( "Tom", "cat" ), ( "Jerry", "mouse" ) ]
+    Dict.fromList [ ( "Jerry", "mouse" ), ( "Tom", "cat" ) ]
 
 
 tests : Test
@@ -192,12 +192,10 @@ tests =
 
                 b1 =
                     List.map (\i -> ( i, [ i ] )) (List.range 1 10)
-                        |> List.reverse
                         |> Dict.fromList
 
                 b2 =
                     List.map (\i -> ( i, [ i ] )) (List.range 5 15)
-                        |> List.reverse
                         |> Dict.fromList
 
                 bExpected =

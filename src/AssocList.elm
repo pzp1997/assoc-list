@@ -428,7 +428,7 @@ partition isGood (D alist) =
 with the most recently inserted key at the head of the list.
 
     keys (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ])
-    --> [ 1, 0 ]
+    --> [ 0, 1 ]
 
 -}
 keys : Dict k v -> List k
@@ -440,7 +440,7 @@ keys (D alist) =
 with the most recently inserted value at the head of the list.
 
     values (fromList [ ( 0, "Alice" ), ( 1, "Bob" ) ])
-    --> [ "Bob", "Alice" ]
+    --> [ "Alice", "Bob" ]
 
 -}
 values : Dict k v -> List v
@@ -457,13 +457,20 @@ toList (D alist) =
     alist
 
 
-{-| Convert an association list into a dictionary. The elements are inserted
-from left to right. (If you want to insert the elements from right to left, you
-can simply call `List.reverse` on the input before passing it to `fromList`.)
+{-| Convert an association list into a dictionary.
+
+If you are using this module as an ordered dictionary, please note that the
+elements are inserted from right to left. (If you want to insert the elements
+from left to right, you can simply call `List.reverse` on the input before
+passing it to `fromList`.)
+
+    toList (fromList [ ( "Alice", 1 ), ( "Bob", 2 ), ( "Alice", 3 ) ])
+    --> [ ( "Alice", 1 ), ( "Bob", 2 ) ]
+
 -}
 fromList : List ( k, v ) -> Dict k v
 fromList alist =
-    List.foldl
+    List.foldr
         (\( key, value ) result ->
             insert key value result
         )

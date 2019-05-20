@@ -1,22 +1,27 @@
 module UniqueList exposing
-    ( empty, singleton, insert, remove
+    ( Set
+    , empty, singleton, insert, remove
     , isEmpty, member, size
     , union, intersect, diff
     , toList, fromList
     , map, foldl, foldr, filter, partition
-    , Set
     )
 
-{-| A set of unique values. The values can be any comparable type. This
-includes `Int`, `Float`, `Time`, `Char`, `String`, and tuples or lists
-of comparable types.
+{-| A unique list is a list of values with the guarantee that no value will be
+duplicated. The values can be of any type (so long as it has a reasonable
+definition for equality). This includes pretty much everything except for
+functions and things that contain functions.
 
-Insert, remove, and query operations all take _O(log n)_ time.
+All functions in this module are "stack safe," which means that your program
+won't crash from recursing over large association lists. You can read
+Evan Czaplicki's
+[document on tail-call elimination](https://github.com/evancz/functional-programming-in-elm/blob/master/recursion/tail-call-elimination.md)
+for more information about this topic.
 
 
 # Sets
 
-@docS uniqueList
+@docs Set
 
 
 # Build
@@ -112,6 +117,15 @@ size (S uniqueList) =
 
 
 {-| Get the union of two sets. Keep all values.
+
+If you are using this module as an ordered set, the ordering of the output set
+will be all the entries of the first set (from most recently inserted to least
+recently inserted) followed by all the entries of the second set that are not
+in the first set (from most recently inserted to least recently inserted).
+
+    toList (union (fromList [ "Bob" ]) (fromList [ "Alice", "Bob" ]))
+    --> [ "Bob", "Alice" ]
+
 -}
 union : Set a -> Set a -> Set a
 union (S uniqueList) set =
@@ -119,6 +133,10 @@ union (S uniqueList) set =
 
 
 {-| Get the intersection of two sets. Keeps values that appear in both sets.
+
+If you are using this module as an ordered set, the output set will have the
+same relative order as the first set.
+
 -}
 intersect : Set a -> Set a -> Set a
 intersect (S leftList) rightSet =
@@ -127,13 +145,18 @@ intersect (S leftList) rightSet =
 
 {-| Get the difference between the first set and the second. Keeps values
 that do not appear in the second set.
+
+If you are using this module as an ordered set, the output set will have the
+same relative order as the first set.
+
 -}
 diff : Set a -> Set a -> Set a
 diff (S leftList) rightSet =
     S (List.filter (\key -> not (member key rightSet)) leftList)
 
 
-{-| Convert a set into a list, sorted from lowest to highest.
+{-| Convert a set into a list, in the order the values were inserted with the
+most recently inserted value at the head of the list.
 -}
 toList : Set a -> List a
 toList (S uniqueList) =
@@ -141,20 +164,28 @@ toList (S uniqueList) =
 
 
 {-| Convert a list into a set, removing any duplicates.
+
+If you are using this module as an ordered set, please note that the elements
+are inserted from right to left. (If you want to insert the elements from left
+to right, you can simply call `List.reverse` on the input before passing it to
+`fromList`.)
+
 -}
 fromList : List a -> Set a
 fromList list =
     List.foldr insert (S []) list
 
 
-{-| Fold over the values in a set, in order from lowest to highest.
+{-| Fold over the values in a set from most recently inserted to least recently
+inserted.
 -}
 foldl : (a -> b -> b) -> b -> Set a -> b
 foldl func initialState (S uniqueList) =
     List.foldl func initialState uniqueList
 
 
-{-| Fold over the values in a set, in order from highest to lowest.
+{-| Fold over the values in a set from least recently inserted to most recently
+inserted.
 -}
 foldr : (a -> b -> b) -> b -> Set a -> b
 foldr func initialState (S uniqueList) =
@@ -165,22 +196,16 @@ foldr func initialState (S uniqueList) =
 -}
 map : (a -> b) -> Set a -> Set b
 map func (S uniqueList) =
-    S (List.map func uniqueList)
+    fromList (List.map func uniqueList)
 
 
 {-| Only keep elements that pass the given test.
 
-    import Set exposing (Set)
 
-    numbers : Set Int
-    numbers =
-        Set.fromList [ -2, -1, 0, 1, 2 ]
-
-    positives : Set Int
     positives =
-        Set.filter (\x -> x > 0) numbers
+        filter (\x -> x > 0) (fromList [ -2, -1, 0, 1, 2 ])
 
-    -- positives == Set.fromList [1,2]
+    --> positives == fromList [ 0, 1, 2 ]
 
 -}
 filter : (a -> Bool) -> Set a -> Set a
