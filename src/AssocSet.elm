@@ -1,7 +1,7 @@
 module AssocSet exposing
     ( Set
     , empty, singleton, insert, remove
-    , isEmpty, member, size
+    , isEmpty, member, size, eq
     , union, intersect, diff
     , toList, fromList
     , map, foldl, foldr, filter, partition
@@ -26,7 +26,7 @@ performance characteristics of the underlying assoc-list implementations.
 
 # Query
 
-@docs isEmpty, member, size
+@docs isEmpty, member, size, eq
 
 
 # Combine
@@ -102,6 +102,19 @@ member key (Set dict) =
 size : Set a -> Int
 size (Set dict) =
     Dict.size dict
+
+
+{-| Compare two sets for equality, ignoring insertion order. Sets are defined to
+be equal when they have identical keys where the keys are compared using the
+built-in equality operator.
+
+You should almost never use the built-in equality operator to compare sets from
+this module since association lists have no canonical form.
+
+-}
+eq : Set a -> Set a -> Bool
+eq (Set dict1) (Set dict2) =
+    Dict.eq dict1 dict2
 
 
 {-| Get the union of two sets. Keep all values.
