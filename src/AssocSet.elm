@@ -7,7 +7,7 @@ module AssocSet exposing
     , map, foldl, foldr, filter, partition
     )
 
-{-| Implimentation of elm/core Set based on pzp1997/assoc-list
+{-| Implementation of elm/core Set based on pzp1997/assoc-list
 
 A set of unique values. The values can be any type that can be compared using (==).
 Insert, remove, and query operation performance subject to
@@ -162,14 +162,19 @@ map func set =
 
 
 {-| Only keep elements that pass the given test.
-import Set exposing (Set)
-numbers : Set Int
-numbers =
-Set.fromList [-2,-1,0,1,2]
-positives : Set Int
-positives =
-Set.filter (\\x -> x > 0) numbers
--- positives == Set.fromList [1,2]
+
+    import Set exposing (Set)
+
+    numbers : Set Int
+    numbers =
+        Set.fromList [ -2, -1, 0, 1, 2 ]
+
+    positives : Set Int
+    positives =
+        Set.filter (\x -> x > 0) numbers
+
+    -- positives == Set.fromList [ 1, 2 ]
+
 -}
 filter : (a -> Bool) -> Set a -> Set a
 filter isGood (Set dict) =
