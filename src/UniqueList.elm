@@ -202,6 +202,7 @@ map func (S uniqueList) =
 {-| Only keep elements that pass the given test.
 
 
+    positives : Set Int
     positives =
         filter (\x -> x > 0) (fromList [ -2, -1, 0, 1, 2 ])
 
