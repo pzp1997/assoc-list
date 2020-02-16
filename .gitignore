@@ -2,3 +2,7 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+# stoeffel/elm-verify-examples
+tests/VerifyExamples
+# CI dependency directories
+node_modules/
