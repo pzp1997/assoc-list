@@ -1,5 +1,7 @@
 # Association lists
 
+[![Build Status](https://travis-ci.com/pzp1997/assoc-list.svg?branch=master)](https://travis-ci.com/pzp1997/assoc-list)
+
 An [association list](https://en.wikipedia.org/wiki/Association_list) is a list of tuples that map unique keys to values. The keys can be of any type (so long as it has a reasonable definition for equality). This includes pretty much everything except for functions and things that contain functions.
 
 ## Usage
