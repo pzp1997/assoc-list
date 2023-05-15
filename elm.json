@@ -3,7 +3,7 @@
     "name": "erlandsona/assoc-set",
     "summary": "Set implemented using association-list-based Dict",
     "license": "BSD-3-Clause",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "exposed-modules": [
         "AssocSet"
     ],

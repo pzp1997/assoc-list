@@ -150,7 +150,7 @@ toList (Set dict) =
 -}
 fromList : List a -> Set a
 fromList list =
-    List.foldl insert empty list
+    List.foldr insert empty list
 
 
 {-| Fold over the values in a set, in order from lowest to highest.
