@@ -3,7 +3,7 @@
     "name": "erlandsona/assoc-set",
     "summary": "Set implemented using association-list-based Dict",
     "license": "BSD-3-Clause",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "exposed-modules": [
         "AssocSet"
     ],
@@ -13,6 +13,6 @@
         "pzp1997/assoc-list": "1.0.0 <= v < 2.0.0"
     },
     "test-dependencies": {
-        "elm-explorations/test": "1.0.0 <= v < 2.0.0"
+        "elm-explorations/test": "1.2.2 <= v < 2.0.0"
     }
 }

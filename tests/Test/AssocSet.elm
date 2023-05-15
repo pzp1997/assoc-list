@@ -44,6 +44,11 @@ set1To100 =
     Set.fromList (List.range 1 100)
 
 
+set100To1 : Set Int
+set100To1 =
+    Set.fromList (List.range 1 100 |> List.reverse)
+
+
 set1To50 : Set Int
 set1To50 =
     Set.fromList (List.range 1 50)
@@ -89,11 +94,11 @@ insertTests =
     [ test "adds new element to empty set" <|
         \() -> Expect.equal set42 (Set.insert 42 Set.empty)
     , test "adds new element to a set of 100" <|
-        \() -> Expect.equal (Set.fromList (List.range 1 101)) (Set.insert 101 set1To100)
+        \() -> Expect.equal (Set.fromList (101 :: List.range 1 100)) (Set.insert 101 set1To100)
     , test "leaves singleton set intact if it contains given element" <|
         \() -> Expect.equal set42 (Set.insert 42 set42)
     , test "leaves set of 100 intact if it contains given element" <|
-        \() -> Expect.equal set1To100 (Set.insert 42 set1To100)
+        \() -> Expect.equal (Set.fromList (42 :: List.range 1 100)) (Set.insert 42 set1To100)
     ]
 
 
@@ -148,11 +153,11 @@ sizeTests =
 foldlTests : List Test
 foldlTests =
     [ test "with insert and empty set acts as identity function" <|
-        \() -> Expect.equal set1To100 (Set.foldl Set.insert Set.empty set1To100)
+        \() -> Expect.equal set100To1 (Set.foldl Set.insert Set.empty set1To100)
     , test "with counter and zero acts as size function" <|
         \() -> Expect.equal 100 (Set.foldl (\_ count -> count + 1) 0 set1To100)
-    , test "folds set elements from lowest to highest" <|
-        \() -> Expect.equal [ 3, 2, 1 ] (Set.foldl (\n ns -> n :: ns) [] (Set.fromList [ 2, 1, 3 ]))
+    , test "folds set elements in reverse insertion order" <|
+        \() -> Expect.equal [ 3, 1, 2 ] (Set.foldl (\n ns -> n :: ns) [] (Set.fromList [ 2, 1, 3 ]))
     ]
 
 
@@ -162,8 +167,8 @@ foldrTests =
         \() -> Expect.equal set1To100 (Set.foldr Set.insert Set.empty set1To100)
     , test "with counter and zero acts as size function" <|
         \() -> Expect.equal 100 (Set.foldr (\_ count -> count + 1) 0 set1To100)
-    , test "folds set elements from highest to lowest" <|
-        \() -> Expect.equal [ 1, 2, 3 ] (Set.foldr (\n ns -> n :: ns) [] (Set.fromList [ 2, 1, 3 ]))
+    , test "folds set elements according to insertion order" <|
+        \() -> Expect.equal [ 2, 1, 3 ] (Set.foldr (\n ns -> n :: ns) [] (Set.fromList [ 2, 1, 3 ]))
     ]
 
 
@@ -205,9 +210,9 @@ unionTests =
     , test "with subset doesn't change anything" <|
         \() -> Expect.equal set1To100 (Set.union set1To100 set42)
     , test "with superset returns superset" <|
-        \() -> Expect.equal set1To100 (Set.union set42 set1To100)
+        \() -> Expect.equal (Set.fromList (42 :: List.range 1 100)) (Set.union set42 set1To100)
     , test "contains elements of both singletons" <|
-        \() -> Expect.equal (Set.insert 1 set42) (Set.union set42 (Set.singleton 1))
+        \() -> Expect.equal (Set.insert 1 set42) (Set.union (Set.singleton 1) set42)
     , test "consists of elements from either set" <|
         \() ->
             Set.union set1To100 set51To150
